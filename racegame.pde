@@ -1,11 +1,14 @@
-import processing.video.*;
+// クラスの宣言
+CameraManager camManager;
+Car mycar;
 
-// カメラの宣言
-Capture cam;
+// 画像データの宣言
+PImage[] car = new PImage[3];
 
-// データの宣言
-PImage rcar, bcar, gcar;
-PImage cambg, mask, bcam, result;
+PImage heartImg;
+int maxLife = 3;
+int collisionCount = 0;
+boolean isGameOver = false;
 
 // 車の移動用変数
 float xpos; // 水平位置
@@ -23,16 +26,18 @@ float topWidth;
 float bottomWidth;
 float roadTopY =skyHeight;
 float roadBottomY;
+int llim;
+int rlim;
 
+// 背景の初期化
 PImage bg = createImage(1920, 1080, RGB);
 PImage bga = createImage(1920,1080, RGB);
 
+// 障害物画像の初期化
+ArrayList<PImage>[] obstacleImgs;
+ArrayList<Obstacle> obstacles;
+
 void setup(){
-  // 画像の読み込み
-  rcar = loadImage("red_car.png");
-  bcar = loadImage("blue_car.png");
-  gcar = loadImage("green_car.png");
-  
   
   // ウィンドウ設定＆描画設定
   size(1920, 1080);
@@ -40,47 +45,77 @@ void setup(){
   frameRate(60);
   background(255);
   colorMode(RGB);
-  
-  // カメラ設定
-  String[] cameras = Capture.list();
-  
-  if(cameras == null){
-    println("Failed to retrieve the list of available cameras, will try the default...");
-    cam = new Capture(this, 640, 480);
-  }else if(cameras.length == 0){
-    println("There are no cameras available for capture.");
-    exit();
-  }else{
-    println("Available cameras:");
-    printArray(cameras);
-    
-    cam = new Capture(this, cameras[0]);
-    cam.start();
-    cambg = createImage(cam.width, cam.height, RGB);
-    mask = createImage(cam.width, cam.height, RGB);
-    bcam = createImage(cam.width, cam.height, RGB);
-    result = createImage(cam.width, cam.height, ARGB);
-    cam.read();
-    bcam.copy(cam,0,0,width,height,0,0,width,height);
-  }
-  
-  // 背景の設定
+
+  // 変数の設定
+  // 背景
   skyHeight = int(height * 0.4);
   topWidth = width * 0.1;
   bottomWidth = width * 0.6;
   roadTopY =skyHeight;
   roadBottomY = height;
   bg = createBackgroundGradient(skyHeight);
-  
   xpos = width / 2;
+  
+  llim = int((width - bottomWidth) / 2);
+  rlim = int((width + bottomWidth) / 2);
+
+  // 画像の読み込み
+  car[0] = loadImage("car_red.png");
+  car[1] = loadImage("car_blue.png");
+  car[2] = loadImage("car_green.png");
+  
+  heartImg = loadImage("heart.png");
+  
+  int car_type = int(random(3));
+  mycar = new Car(car[car_type], xpos, 950, llim, rlim, 0.3);
+  
+  // cameraManagerのインスタンス作成
+  camManager = new CameraManager(this);
+  // PImageの初期化
+  camManager.initImages();  
+  
+  obstacleImgs = new ArrayList[3];
+  for(int i = 0; i < 3; i++){
+    obstacleImgs[i] = new ArrayList<PImage>();
+  }
+  
+  // 障害物画像読み込み
+  loadObstacleImages();
+  
+  // 障害物リストの初期化
+  obstacles = new ArrayList<Obstacle>();
+
 }
 
 void draw(){
+  // ゲームオーバー処理
+  if(isGameOver){
+    background(0);
+    fill(255, 0, 0);
+    textSize(100);
+    textAlign(CENTER, CENTER);
+    text("Game Over", width/2, height/2);
+    return;
+  }
+  
   // 背景の初期化
   imageMode(CORNER);
   background(255);
   image(bg, 0, 0);
   
+  // 残りライフを計算
+  int remainingLife = maxLife - collisionCount;
+  
+  // ハート画像の表示位置と大きさ設定
+  int heartSize = 50;
+  int margin = 10;
+  int startX = 20;
+  int startY = 20;
+  
+  // 残りライフ分のハートを描画
+  for(int i = 0; i < remainingLife; i++){
+    image(heartImg, startX + i * (heartSize + margin), startY, heartSize, heartSize);
+  }
   
   // 道路の描画
   // 道路の形（台形）
@@ -99,7 +134,7 @@ void draw(){
   strokeWeight(3);
 
   int numLines = 20;
-  float line_speed = 4; // 破線の流れる速さ
+  float line_speed = 3; // 破線の流れる速さ
   float laneWidth = bottomWidth / 3;
   
   for (int i = 0; i < numLines; i++) {
@@ -124,89 +159,39 @@ void draw(){
     }
   }
   
+  // 障害物の描画・更新
+  for(int i = obstacles.size() - 1; i >= 0; i--){
+    Obstacle o = obstacles.get(i);
+    o.update();
+    o.display();
+    
+    // 車との衝突判定
+    if(o.checkCollision(mycar)){
+      collisionCount++;
+      obstacles.remove(i);
+      
+      if(collisionCount >= maxLife){
+        isGameOver = true;
+      }
+    }else if(o.isOutOfScreen()){
+      obstacles.remove(i);
+    }
+  }
+  
+  // 障害物の追加
+  if (frameCount % 240 == 0){
+    addRandomObstacle();
+  }
   
   // カメラの処理
-  if(cam.available()){
-    cam.read();
-    if(mousePressed==true){
-      cambg.copy(cam, 0, 0, cam.width, cam.height, 0, 0, cam.width, cam.height);
-    }
-  }
-  
-  float centroidX = 0;
-  int mask_pix_num = 0;
-  
-  result.loadPixels();
-  mask.loadPixels();
-  
-  for(int w = 0; w < cam.width; w++){
-    for(int h = 0; h < cam.height; h++){
-      int pix = h * cam.width + w;
-      color c = cam.pixels[pix];
-      
-      // 動体検知
-      color c1 = cambg.pixels[pix];
-      float diff1 = (abs(red(c1) - red(c)) + 
-                    abs(green(c1) - green(c)) +
-                    abs(blue(c1) - blue(c))) / 3.0;
-      
-      if(diff1 > thresh){
-        result.pixels[pix] = color(red(c), green(c), blue(c), 255);
-      }else{
-        result.pixels[pix] = color(0, 0, 0, 0);
-      }
-      
-      // 差分検出
-      color c2 = bcam.pixels[pix];
-      float diff2 = (abs(red(c2) - red(c)) + 
-                    abs(green(c2) - green(c)) +
-                    abs(blue(c2) - blue(c))) / 3.0;
-                    
-      if(diff2 > thresh){
-        mask.pixels[pix] = color(255);
-        centroidX += w - cam.width / 2;
-        mask_pix_num++;
-      }else{
-        mask.pixels[pix] = color(0);
-      }  
-    }
-  }
-  result.updatePixels();
-  mask.updatePixels();
-  
-  // 更新
-  bcam.copy(cam, 0, 0, cam.width, cam.height, 0, 0, cam.width, cam.height);
-  
-  // 車(xpos)の移動
-  // 重心位置の正規化＆デッドゾーン
-  if(mask_pix_num > 0){
-    centroidX /= mask_pix_num;
-    centroidX /= (cam.width / 2.0);
-    if(abs(centroidX) < 0.2){
-      centroidX = 0;
-    }
-    float directionFactor = 1.0;
-    if(centroidX * xvel < 0){
-      directionFactor = 0.3;
-    }
-    
-    xvel += centroidX * acceleration * directionFactor;
-  }
+  camManager.update();
 
-  xpos += xvel*1.5;
-  xvel *= 0.995;
-  // 値の制限
-  int llim = int((width-bottomWidth)/2);
-  int rlim = int((width+bottomWidth)/2);
-  xpos = constrain(xpos, llim, rlim);
-  xvel = constrain(xvel, -2, 2);
+  // 車(xpos)の移動
+  mycar.update(camManager.getMaskPixNum(), camManager.getCentroidX(), camManager);
   
-  //print("xpos:",xpos);
-  print("centroid", centroidX);
-    
-  image(mask, 0, 0);
-  imageMode(CENTER);
-  image(result, xpos, 850, cam.width/4, cam.height/4);
-  image(rcar, xpos, 950, 250, 250);
-  cam.read();
+  // カメラの描画
+  camManager.display(mycar.x_pos);
+  
+  // 車の描画
+  mycar.display();
 }

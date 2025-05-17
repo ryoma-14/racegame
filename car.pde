@@ -22,7 +22,14 @@ class Car {
     this.acceleration = acceleration;
   }
 
-  void update(float centroidX) {
+  // 車の加速度，速度，位置の更新
+  void update(int mask_pix_num, float centroidX, CameraManager camManager) {
+    // 重心の正規化
+    if(mask_pix_num > 0){
+      centroidX /= mask_pix_num;
+      centroidX /= camManager.getCamWidth() / 2.0;
+    } else centroidX = 0;
+    
     // デッドゾーンの設定
     if(abs(centroidX) < 0.25){
       centroidX = 0;
@@ -31,7 +38,7 @@ class Car {
     // 切り返しの減衰
     directionFactor = 1.0;
     if (centroidX * vel < 0) {
-      directionFactor = 0.3;
+      directionFactor = 0.5;
     }
     
     // 速度の更新
@@ -47,8 +54,10 @@ class Car {
     
   }
 
+  // 車の画像の表示
   void display() {
     imageMode(CENTER);
     image(img, x_pos, y_pos, outScale, outScale);
   }
+  
 }
