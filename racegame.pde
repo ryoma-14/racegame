@@ -5,10 +5,12 @@ Car mycar;
 // 画像データの宣言
 PImage[] car = new PImage[3];
 
+// ゲームシステムの変数
 PImage heartImg;
 int maxLife = 3;
 int collisionCount = 0;
 boolean isGameOver = false;
+boolean isPaused = false;
 
 // 車の移動用変数
 float xpos; // 水平位置
@@ -96,6 +98,17 @@ void draw(){
     textAlign(CENTER, CENTER);
     text("Game Over", width/2, height/2);
     return;
+  }
+  
+  if (isPaused) {
+    // ポーズ中は画面をそのまま維持（ゲームの更新は止める）
+    fill(0, 150);
+    rect(0, 0, width, height);
+    fill(255);
+    textSize(64);
+    textAlign(CENTER, CENTER);
+    text("PAUSED", width/2, height/2);
+    return;  // ここでdrawの処理を止める
   }
   
   // 背景の初期化

@@ -132,7 +132,7 @@ class CameraManager{
   // 画像の表示
   void display(float x_pos){
     imageMode(CORNER);
-    //image(camManager.getMask(), 0, 0);
+    image(camManager.getMask(), width-cam.width, 0);
     imageMode(CENTER);
     image(camManager.getResult(), x_pos, 850, cam.width/4, cam.height/4);
   }
