@@ -7,8 +7,9 @@ PImage[] car = new PImage[3];
 
 // ゲームシステムの変数
 PImage heartImg;
-int maxLife = 3;
+int maxLife = 5;
 int collisionCount = 0;
+int frameCounter = 0;
 boolean isGameOver = false;
 boolean isPaused = false;
 
@@ -38,6 +39,8 @@ PImage bga = createImage(1920,1080, RGB);
 // 障害物画像の初期化
 ArrayList<PImage>[] obstacleImgs;
 ArrayList<Obstacle> obstacles;
+
+int nextObstacleFrame = 240;
 
 void setup(){
   
@@ -116,6 +119,8 @@ void draw(){
   background(255);
   image(bg, 0, 0);
   
+  frameCounter++;
+  
   // 残りライフを計算
   int remainingLife = maxLife - collisionCount;
   
@@ -150,27 +155,38 @@ void draw(){
   float line_speed = 3; // 破線の流れる速さ
   float laneWidth = bottomWidth / 3;
   
+  float offset = (frameCount * line_speed) % (height / numLines);
+  
   for (int i = 0; i < numLines; i++) {
-    float offset = (frameCount * line_speed) % (height / numLines);
+    float interY1 = lerp(roadTopY, roadBottomY, (float)i / numLines) + offset;
     
-    float interY1 = map(i, 0, numLines, roadTopY, roadBottomY) + offset;
+    if(interY1 >= roadBottomY) continue;
     
-    float dashLength = map(interY1, roadTopY, roadBottomY, 1, 15);
+    float t = (interY1 - roadTopY) / (roadBottomY - roadTopY);
+    
+    float dashLength = lerp(1, 15, t);
     float interY2 = interY1 + dashLength;
 
-    float x1 = map(interY1, roadTopY, roadBottomY, (width - topWidth) / 2, (width - bottomWidth) / 2);
-    float x2 = map(interY1, roadTopY, roadBottomY, (width + topWidth) / 2, (width + bottomWidth) / 2);
+    float x1 = lerp((width - topWidth) / 2, (width - bottomWidth) / 2, t);
+    float x2 = lerp((width + topWidth) / 2, (width + bottomWidth) / 2, t);
 
     float centerX = (x1 + x2) / 2;
-    float currentLaneWidth = map(interY1, roadTopY, roadBottomY, laneWidth * 0.1, laneWidth);
+    float currentLaneWidth = lerp(laneWidth * 0.1, laneWidth, t);
 
-    if(interY1 < roadBottomY){
-      // 左側の線
-      line(centerX - currentLaneWidth / 2, interY1, centerX - currentLaneWidth / 2, interY2);
-      // 右側の線
-      line(centerX + currentLaneWidth / 2, interY1, centerX + currentLaneWidth / 2, interY2);
-    }
+    // 左側の線
+    line(centerX - currentLaneWidth / 2, interY1, centerX - currentLaneWidth / 2, interY2);
+    // 右側の線
+    line(centerX + currentLaneWidth / 2, interY1, centerX + currentLaneWidth / 2, interY2);
   }
+  
+  // カメラの処理
+  if(frameCounter % 2 == 0){
+    camManager.update();
+  }
+  
+  camManager.displayMask();
+  
+  imageMode(CENTER);
   
   // 障害物の描画・更新
   for(int i = obstacles.size() - 1; i >= 0; i--){
@@ -178,32 +194,36 @@ void draw(){
     o.update();
     o.display();
     
+    boolean shouldRemove = false;
+    
     // 車との衝突判定
     if(o.checkCollision(mycar)){
       collisionCount++;
-      obstacles.remove(i);
+      shouldRemove = true;
       
       if(collisionCount >= maxLife){
         isGameOver = true;
       }
     }else if(o.isOutOfScreen()){
+      shouldRemove = true;
+    }
+    
+    if(shouldRemove){
       obstacles.remove(i);
     }
   }
   
   // 障害物の追加
-  if (frameCount % 240 == 0){
+  if (frameCounter % nextObstacleFrame == 0){
     addRandomObstacle();
+    nextObstacleFrame = int(random(150, 300));
   }
   
-  // カメラの処理
-  camManager.update();
-
   // 車(xpos)の移動
   mycar.update(camManager.getCentroidX(), camManager);
   
-  // カメラの描画
-  camManager.display(mycar.x_pos);
+  //// カメラの描画
+  //camManager.displayResult(mycar.x_pos);
   
   // 車の描画
   mycar.display();

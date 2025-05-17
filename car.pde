@@ -54,7 +54,6 @@ class Car {
 
   // 車の画像の表示
   void display() {
-    imageMode(CENTER);
     image(img, x_pos, y_pos, outScale, outScale);
   }
   

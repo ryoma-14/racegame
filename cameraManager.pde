@@ -63,17 +63,17 @@ class CameraManager{
         int pix = h * cam.width + w;
         color c = cam.pixels[pix];
         
-        // 動体検知
-        color c1 = cambg.pixels[pix];
-        float diff1 = (abs(red(c1) - red(c)) + 
-                      abs(green(c1) - green(c)) +
-                      abs(blue(c1) - blue(c))) / 3.0;
+        //// 動体検知
+        //color c1 = cambg.pixels[pix];
+        //float diff1 = (abs(red(c1) - red(c)) + 
+        //              abs(green(c1) - green(c)) +
+        //              abs(blue(c1) - blue(c))) / 3.0;
         
-        if(diff1 > thresh){
-          result.pixels[pix] = color(red(c), green(c), blue(c), 255);
-        }else{
-          result.pixels[pix] = color(0, 0, 0, 0);
-        }
+        //if(diff1 > thresh){
+        //  result.pixels[pix] = color(red(c), green(c), blue(c), 255);
+        //}else{
+        //  result.pixels[pix] = color(0, 0, 0, 0);
+        //}
         
         // 差分検出
         color c2 = bcam.pixels[pix];
@@ -92,7 +92,7 @@ class CameraManager{
     }
 
     // ピクセルの更新
-    result.updatePixels();
+    //result.updatePixels();
     mask.updatePixels();
 
     // 前フレームの更新
@@ -126,10 +126,10 @@ class CameraManager{
     return centroidX;
   }
 
-  // 動体検知の取得
-  PImage getResult(){
-    return result;
-  }
+  //// 動体検知の取得
+  //PImage getResult(){
+  //  return result;
+  //}
 
   // maskの取得
   PImage getMask(){
@@ -154,11 +154,11 @@ class CameraManager{
   }
   
   // 画像の表示
-  void display(float x_pos){
-    imageMode(CORNER);
+  void displayMask(){
     image(getFlippedMask(), width - cam.width, 0);
-    imageMode(CENTER);
-    image(getResult(), x_pos, 850, cam.width/4, cam.height/4);
   }
   
+  //void displayResult(float x_pos){
+  //  image(getResult(), x_pos, 850, cam.width/4, cam.height/4);
+  //}
 }
