@@ -5,7 +5,7 @@ class Car {
   float acceleration; // 車の加速度
   float llim, rlim; // 移動の左端、右端
   
-  float maxSpeed = 2.0; // 制限速度
+  float maxSpeed = 3.0; // 制限速度
   float directionFactor; // 切り返しの減衰率
   float attenuationFactor = 0.995; // 速度の減衰率
   
@@ -23,13 +23,11 @@ class Car {
   }
 
   // 車の加速度，速度，位置の更新
-  void update(int mask_pix_num, float centroidX, CameraManager camManager) {
+  void update(float centroidX, CameraManager camManager) {
     // 重心の正規化
-    if(mask_pix_num > 0){
-      centroidX /= mask_pix_num;
       centroidX /= camManager.getCamWidth() / 2.0;
-    } else centroidX = 0;
-    
+      centroidX = -centroidX;
+      
     // デッドゾーンの設定
     if(abs(centroidX) < 0.25){
       centroidX = 0;
@@ -38,7 +36,7 @@ class Car {
     // 切り返しの減衰
     directionFactor = 1.0;
     if (centroidX * vel < 0) {
-      directionFactor = 0.5;
+      directionFactor = 0.6;
     }
     
     // 速度の更新
@@ -46,7 +44,7 @@ class Car {
     vel = constrain(vel, -maxSpeed, maxSpeed);
     
     // 車の位置の更新
-    x_pos += vel * 1.5;
+    x_pos += vel * 1.8;
     x_pos = constrain(x_pos, llim, rlim);
     
     // 速度の減衰

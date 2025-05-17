@@ -6,6 +6,7 @@ class CameraManager{
   PImage cambg, mask, bcam, result;
   float thresh = 18.0;
   float centroidX = 0;
+  float pcentroidX = 0;
   int mask_pix_num = 0;
   
   // コンストラクタの設定
@@ -97,6 +98,12 @@ class CameraManager{
     // 前フレームの更新
     bcam.copy(cam, 0, 0, cam.width, cam.height, 0, 0, cam.width, cam.height);
     
+    if(mask_pix_num < 200){
+      centroidX = pcentroidX;
+    } else {
+      pcentroidX = centroidX / mask_pix_num;
+      centroidX = pcentroidX;
+    }
   }
   
   // cam.widthの取得
@@ -129,12 +136,29 @@ class CameraManager{
     return mask;
   }
   
+  PImage getFlippedMask(){
+    PImage flipped = createImage(mask.width, mask.height, RGB);
+  mask.loadPixels();
+  flipped.loadPixels();
+
+  for(int y = 0; y < mask.height; y++){
+    for(int x = 0; x < mask.width; x++){
+      int srcIndex = y * mask.width + x;
+      int dstIndex = y * mask.width + (mask.width - 1 - x);
+      flipped.pixels[dstIndex] = mask.pixels[srcIndex];
+    }
+  }
+
+  flipped.updatePixels();
+  return flipped;
+  }
+  
   // 画像の表示
   void display(float x_pos){
     imageMode(CORNER);
-    image(camManager.getMask(), width-cam.width, 0);
+    image(getFlippedMask(), width - cam.width, 0);
     imageMode(CENTER);
-    image(camManager.getResult(), x_pos, 850, cam.width/4, cam.height/4);
+    image(getResult(), x_pos, 850, cam.width/4, cam.height/4);
   }
   
 }

@@ -58,8 +58,8 @@ void setup(){
   bg = createBackgroundGradient(skyHeight);
   xpos = width / 2;
   
-  llim = int((width - bottomWidth) / 2);
-  rlim = int((width + bottomWidth) / 2);
+  llim = int((width - bottomWidth) / 2) + 100;
+  rlim = int((width + bottomWidth) / 2) - 100;
 
   // 画像の読み込み
   car[0] = loadImage("car_red.png");
@@ -200,7 +200,7 @@ void draw(){
   camManager.update();
 
   // 車(xpos)の移動
-  mycar.update(camManager.getMaskPixNum(), camManager.getCentroidX(), camManager);
+  mycar.update(camManager.getCentroidX(), camManager);
   
   // カメラの描画
   camManager.display(mycar.x_pos);
