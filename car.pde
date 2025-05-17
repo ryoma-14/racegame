@@ -36,7 +36,7 @@ class Car {
     // 切り返しの減衰
     directionFactor = 1.0;
     if (centroidX * vel < 0) {
-      directionFactor = 0.6;
+      directionFactor = 0.75;
     }
     
     // 速度の更新
@@ -44,7 +44,7 @@ class Car {
     vel = constrain(vel, -maxSpeed, maxSpeed);
     
     // 車の位置の更新
-    x_pos += vel * 1.8;
+    x_pos += vel * 2.0;
     x_pos = constrain(x_pos, llim, rlim);
     
     // 速度の減衰

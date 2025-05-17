@@ -7,11 +7,13 @@ PImage[] car = new PImage[3];
 
 // ゲームシステムの変数
 PImage heartImg;
+PImage starImg;
 int maxLife = 5;
 int collisionCount = 0;
 int frameCounter = 0;
 boolean isGameOver = false;
 boolean isPaused = false;
+int level = 0;
 
 // 車の移動用変数
 float xpos; // 水平位置
@@ -41,6 +43,7 @@ ArrayList<PImage>[] obstacleImgs;
 ArrayList<Obstacle> obstacles;
 
 int nextObstacleFrame = 240;
+int obstacleCount = 0;
 
 void setup(){
   
@@ -70,6 +73,7 @@ void setup(){
   car[2] = loadImage("car_green.png");
   
   heartImg = loadImage("heart.png");
+  starImg = loadImage("star.png");
   
   int car_type = int(random(3));
   mycar = new Car(car[car_type], xpos, 950, llim, rlim, 0.3);
@@ -100,6 +104,15 @@ void draw(){
     textSize(100);
     textAlign(CENTER, CENTER);
     text("Game Over", width/2, height/2);
+    
+     // 難易度を描画
+    int startX = width/2 - ((level+1)*50 + level*20)/2;
+    int startY = height/2+60;
+    int starSize = 50;
+    int margin = 20;
+    for(int i = 0; i < level + 1; i++){
+      image(starImg, startX + i * (starSize + margin), startY + 60, starSize, starSize);
+    }
     return;
   }
   
@@ -111,6 +124,7 @@ void draw(){
     textSize(64);
     textAlign(CENTER, CENTER);
     text("PAUSED", width/2, height/2);
+    
     return;  // ここでdrawの処理を止める
   }
   
@@ -133,6 +147,11 @@ void draw(){
   // 残りライフ分のハートを描画
   for(int i = 0; i < remainingLife; i++){
     image(heartImg, startX + i * (heartSize + margin), startY, heartSize, heartSize);
+  }
+  
+  // 難易度を描画
+  for(int i = 0; i < level + 1; i++){
+    image(starImg, startX + i * (heartSize + margin), startY + 60, heartSize, heartSize);
   }
   
   // 道路の描画
@@ -216,7 +235,11 @@ void draw(){
   // 障害物の追加
   if (frameCounter % nextObstacleFrame == 0){
     addRandomObstacle();
-    nextObstacleFrame = int(random(150, 300));
+    obstacleCount++;
+    if(obstacleCount % 5 == 0){
+      level++;
+    }
+    nextObstacleFrame = int(random(300-(level*20), 300-(level*10)));
   }
   
   // 車(xpos)の移動
