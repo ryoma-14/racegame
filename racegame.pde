@@ -8,7 +8,7 @@ PImage[] car = new PImage[3];
 // ゲームシステムの変数
 PImage heartImg;
 PImage starImg;
-int maxLife = 5;
+int maxLife = 3;
 int collisionCount = 0;
 int frameCounter = 0;
 boolean isGameOver = false;
@@ -250,4 +250,68 @@ void draw(){
   
   // 車の描画
   mycar.display();
+}
+
+// その他の関数
+void mousePressed() {
+  if (mouseButton == RIGHT) {  // 右クリックなら
+    isPaused = !isPaused;      // ポーズ状態をトグル（ON/OFF切替）
+  }
+}
+
+PImage createBackgroundGradient(float skyHeight){
+  PImage bg = createImage(1920, 1080, RGB);
+  bg.loadPixels(); // pixels配列を操作する準備
+
+  // 空の色（青空）
+  color topSky = color(0, 150, 255);
+  color bottomSky = color(200, 230, 255);
+  
+  // 地面の色
+  color topCity = color(180);
+  color bottomCity = color(100);
+
+  for (int y = 0; y < bg.height; y++) {
+    color c;
+    if (y < skyHeight) {
+      float inter = map(y, 0, skyHeight, 0, 1);
+      c = lerpColor(topSky, bottomSky, inter);
+    } else {
+      float inter = map(y, skyHeight, bg.height, 0, 1);
+      c = lerpColor(topCity, bottomCity, inter);
+    }
+
+    // 1行分まとめて色を代入
+    int rowStart = y * bg.width;
+    for (int x = 0; x < bg.width; x++) {
+      bg.pixels[rowStart + x] = c;
+    }
+  }
+
+  bg.updatePixels(); // pixels配列の更新を反映
+  return bg;
+}
+
+void loadObstacleImages(){
+  // グループ0
+  obstacleImgs[0].add(loadImage("drum_red.png"));
+  obstacleImgs[0].add(loadImage("drum_green.png"));
+  obstacleImgs[0].add(loadImage("drum_blue.png"));
+  obstacleImgs[0].add(loadImage("drum_ash.png"));
+  
+  // グループ1
+  obstacleImgs[1].add(loadImage("guard_fence.png"));
+  obstacleImgs[1].add(loadImage("traffic_cone.png"));
+  
+  // グループ2
+  obstacleImgs[2].add(loadImage("deer.png"));
+}
+
+void addRandomObstacle(){
+  int group = int(random(3));
+  int type = int(random(obstacleImgs[group].size()));
+  PImage img = obstacleImgs[group].get(type);
+  
+  Obstacle o = new Obstacle(img, random(int((width - topWidth) / 2), int((width + topWidth) / 2)), skyHeight, 50.0);
+  obstacles.add(o);
 }
