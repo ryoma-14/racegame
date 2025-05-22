@@ -8,7 +8,7 @@ PImage[] car = new PImage[3];
 // ゲームシステムの変数
 PImage heartImg;
 PImage starImg;
-int maxLife = 3;
+int maxLife = 5;
 int collisionCount = 0;
 int frameCounter = 0;
 boolean isGameOver = false;
@@ -185,13 +185,13 @@ void draw(){
     
     float dashLength = lerp(1, 15, t);
     float interY2 = interY1 + dashLength;
-
+  
     float x1 = lerp((width - topWidth) / 2, (width - bottomWidth) / 2, t);
     float x2 = lerp((width + topWidth) / 2, (width + bottomWidth) / 2, t);
-
+  
     float centerX = (x1 + x2) / 2;
     float currentLaneWidth = lerp(laneWidth * 0.1, laneWidth, t);
-
+  
     // 左側の線
     line(centerX - currentLaneWidth / 2, interY1, centerX - currentLaneWidth / 2, interY2);
     // 右側の線
